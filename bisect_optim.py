@@ -15,19 +15,16 @@ def bisect(dx, eps=2**-16):
             sign_grad_low = jax.numpy.sign(grad_low)
             sign_grad_high = jax.numpy.sign(grad_high)
             sign_grad_mid = jax.numpy.sign(grad_mid)
-            bounding = sign_grad_low != sign_grad_high
-            replace_low = sign_grad_low == sign_grad_mid
-            idx = bounding * replace_low
-            low += mid * idx - low * idx
-            idx = bounding * ~replace_low
-            high += mid * idx - high * idx
-            abs_grad_low = abs(grad_low)
-            abs_grad_high = abs(grad_high)
-            low_closer = abs_grad_low < abs_grad_high
-            idx = ~bounding * low_closer * (abs_grad_low > eps)
-            high += 3 * idx * (low - high)
-            idx = ~bounding * ~low_closer * (abs_grad_high > eps)
-            low += 3 * idx * (high - low)
+            dx = (high - low) / 2
+            idx = sign_grad_low == -1
+            low -= ~idx * dx
+            idx *= sign_grad_low == sign_grad_mid
+            low += idx * dx
+
+            idx = sign_grad_high == 1
+            high += ~idx * dx
+            idx *= sign_grad_high == sign_grad_mid
+            high -= idx * dx
             return low, high
         return tuple(map(lambda tree: trees[0].unflatten(tree),
                 zip(*map(lambda x: f(*x),
